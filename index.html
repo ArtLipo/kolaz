@@ -894,7 +894,7 @@ function generateComposition(params, idea, lens) {
   const rules = state.rules;
 
   // Apply mode overrides
-  let density = mode === 'chaos' ? randInt(3, 7) : rules.density;
+  let density = mode === 'chaos' ? randInt(2, 5) : rules.density;
   let rotMax = mode === 'chaos' ? params.rotation_max : (rules.rotation / 5) * 30;
   let textRatio = mode === 'chaos' ? params.text_opacity : rules.textRatio / 10;
   let contrast = mode === 'chaos' ? params.contrast : (rules.contrast - 3) / 3;
@@ -913,22 +913,26 @@ function generateComposition(params, idea, lens) {
 
   // Photos
   if (state.photos.length > 0) {
-    const numPhotos = Math.min(density, state.photos.length * 2);
+    // density 1-5: od 2 do 12 elementów, większe przy wyższej gęstości
+    const numPhotos = Math.round(2 + (density - 1) * 2.5);
+    const scaleMin = Math.max(0.15, 0.45 - density * 0.05);
+    const scaleMax = Math.min(1.0, 0.5 + density * 0.1);
 
     for (let i = 0; i < numPhotos; i++) {
       const photo = pick(state.photos);
       const img = photo.img;
 
-      // Size
-      const scale = rand(0.25, 0.75);
+      // Size — większe elementy przy wyższej gęstości
+      const scale = rand(scaleMin, scaleMax);
       const maxDim = SIZE * scale;
       let iw = img.width, ih = img.height;
       const ratio = Math.min(maxDim/iw, maxDim/ih);
       iw *= ratio; ih *= ratio;
 
-      // Position
-      const x = rand(-iw * 0.3, SIZE - iw * 0.7);
-      const y = rand(-ih * 0.3, SIZE - ih * 0.7);
+      // Position — przy wysokiej gęstości elementy wychodzą poza krawędź mniej
+      const overflow = Math.max(0.05, 0.3 - density * 0.05);
+      const x = rand(-iw * overflow, SIZE - iw * (1 - overflow));
+      const y = rand(-ih * overflow, SIZE - ih * (1 - overflow));
       const rot = rand(-rotMax, rotMax) * (Math.PI / 180);
 
       // Draw to temp canvas for processing
